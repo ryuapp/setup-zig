@@ -15,17 +15,16 @@ export async function extractArchive(
   await mkdir(destination, { recursive: true });
   if (archive.endsWith(".zip")) {
     if (process.platform === "win32") {
-      try {
-        info("Extracting ZIP with 7-Zip");
-        await exec("7z", ["x", "-y", "-mmt=on", `-o${destination}`, archive]);
-      } catch (error) {
-        const code = typeof error === "object" && error && "code" in error
-          ? error.code
-          : undefined;
-        if (code !== "ENOENT") throw error;
-        info("7-Zip is unavailable; extracting ZIP with tar");
-        await exec("tar", ["-xf", archive, "-C", destination]);
-      }
+      const quote = (value: string) => value.replaceAll("'", "''");
+      await exec("powershell", [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Add-Type -AssemblyName System.IO.Compression.FileSystem; " +
+        `[IO.Compression.ZipFile]::ExtractToDirectory('${quote(archive)}', ` +
+        `'${quote(destination)}')`,
+      ]);
     } else {
       await exec("unzip", ["-q", archive, "-d", destination]);
     }
