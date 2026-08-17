@@ -112,20 +112,23 @@ async function readDownload(response: Response): Promise<Uint8Array> {
   const total = Number(response.headers.get("content-length"));
   const chunks: Uint8Array[] = [];
   let received = 0;
-  let nextProgress = 5;
-  if (Number.isFinite(total) && total > 0) info("Download progress: 0%");
+  let lastProgressAt = performance.now();
+  const hasTotal = Number.isFinite(total) && total > 0;
+  info(hasTotal ? "Download progress: 0%" : "Download progress: started");
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     if (!value) continue;
     chunks.push(value);
     received += value.byteLength;
-    if (Number.isFinite(total) && total > 0) {
-      const progress = Math.floor((received * 100) / total);
-      if (progress >= nextProgress) {
+    if (performance.now() - lastProgressAt >= 5000) {
+      if (hasTotal) {
+        const progress = Math.floor((received * 100) / total);
         info(`Download progress: ${progress}%`);
-        nextProgress = progress + 5;
+      } else {
+        info(`Download progress: ${received} bytes`);
       }
+      lastProgressAt = performance.now();
     }
   }
   const bytes = new Uint8Array(received);
@@ -134,7 +137,11 @@ async function readDownload(response: Response): Promise<Uint8Array> {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  if (Number.isFinite(total) && total > 0) info("Download progress: 100%");
+  info(
+    hasTotal
+      ? "Download progress: 100%"
+      : `Download progress: ${received} bytes`,
+  );
   return bytes;
 }
 
