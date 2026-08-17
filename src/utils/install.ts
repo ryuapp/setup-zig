@@ -25,6 +25,7 @@ export async function installZig(
   platform: string,
   urls: string[],
   sha256: string,
+  size?: number,
 ): Promise<string> {
   const destination = installationPath(version, platform);
   const executable = join(
@@ -47,7 +48,14 @@ export async function installZig(
       signature.search = "";
       signature.pathname += ".minisig";
       signature.searchParams.set("source", DOWNLOAD_SOURCE);
-      await downloadVerified(url, sha256, archive, fetch, signature.toString());
+      await downloadVerified(
+        url,
+        sha256,
+        archive,
+        fetch,
+        signature.toString(),
+        size,
+      );
       const extracted = await extractArchive(archive, destination);
       if (extracted !== destination) {
         info("Flattening extracted Zig directory");

@@ -35,6 +35,7 @@ export async function run(): Promise<void> {
     platform,
     await downloadUrls(artifact.tarball),
     artifact.shasum,
+    artifact.size,
   );
   addPath(zigPath);
   setOutput("version", version);
