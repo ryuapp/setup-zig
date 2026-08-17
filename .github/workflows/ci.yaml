@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    name: Quality
+    name: CI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,16 +28,21 @@ jobs:
           - name: Lint
             run: deno lint
 
-  smoke-test:
-    name: Install Zig with local Action
+  test:
+    name: Install Zig test
     needs: check
     strategy:
       fail-fast: false
+      # https://github.com/actions/runner-images#available-images
       matrix:
         os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
+          - ubuntu-26.04
+          - ubuntu-26.04-arm
+          - ubuntu-slim
+          - xcode-27
+          - macos-26-large
+          - windows-2025
+          - windows-11-vs2026-arm
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
