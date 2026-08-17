@@ -1,6 +1,6 @@
 # setup-zig
 
-[![npm](https://github.com/ryuapp/setup-zig/workflows/CI/badge.svg)](https://github.com/ryuapp/setup-zig/actions?query=workflow%3ACI)
+[![CI](https://github.com/ryuapp/setup-zig/workflows/CI/badge.svg)](https://github.com/ryuapp/setup-zig/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/github/license/ryuapp/setup-zig?labelColor=171717&color=39b54a&label=License)](https://github.com/ryuapp/setup-zig/blob/main/LICENSE)
 
 Set up your GitHub Actions workflow with a specific version of Zig.
