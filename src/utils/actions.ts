@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 import process from "node:process";
 
 export function input(name: string, fallback = ""): string {
@@ -10,22 +11,20 @@ export function booleanInput(name: string, fallback: boolean): boolean {
   return value ? value.toLowerCase() === "true" : fallback;
 }
 
-function command(name: string, value: string): void {
-  process.stdout.write(
-    `::${name}::${
-      value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A")
-    }\n`,
-  );
+function appendEnvironmentFile(name: string, value: string): void {
+  const path = process.env[name];
+  if (!path) throw new Error(`${name} is not available`);
+  appendFileSync(path, `${value}\n`, "utf8");
 }
 
 export function addPath(path: string): void {
-  command("add-path", path);
+  appendEnvironmentFile("GITHUB_PATH", path);
 }
 export function setOutput(name: string, value: string): void {
-  command(`set-output name=${name}`, value);
+  appendEnvironmentFile("GITHUB_OUTPUT", `${name}=${value}`);
 }
 export function setState(name: string, value: string): void {
-  command(`save-state name=${name}`, value);
+  appendEnvironmentFile("GITHUB_STATE", `${name}=${value}`);
 }
 export function info(message: string): void {
   console.log(message);
