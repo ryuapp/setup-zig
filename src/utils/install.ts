@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { cp, mkdir, rm } from "node:fs/promises";
+import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 import { extractArchive } from "./archive.ts";
@@ -45,7 +45,11 @@ export async function installZig(
       await downloadVerified(url, sha256, archive, fetch, signature.toString());
       const extracted = await extractArchive(archive, destination);
       if (extracted !== destination) {
-        await cp(extracted, destination, { recursive: true, force: true });
+        info("Flattening extracted Zig directory");
+        for (const entry of await readdir(extracted)) {
+          await rename(join(extracted, entry), join(destination, entry));
+        }
+        await rm(extracted, { recursive: true, force: true });
       }
       info(`Installed Zig ${version} at ${destination}`);
       return destination;
