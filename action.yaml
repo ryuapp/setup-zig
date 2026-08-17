@@ -1,0 +1,19 @@
+name: Setup Zig
+description: Setup Zig by installing, downloading, and adding it to the path.
+inputs:
+  version:
+    description: Zig version, master, latest, or empty to read minimum_zig_version from build.zig.zon
+    required: false
+    default: ""
+  cache:
+    description: Cache the global and local Zig cache directories
+    required: false
+    default: "true"
+  cache-key:
+    description: Additional cache key component added to the automatic OS, platform, and version key
+    required: false
+    default: ""
+runs:
+  using: node24
+  main: src/main.ts
+  post: src/post.ts

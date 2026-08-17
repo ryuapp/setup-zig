@@ -1,0 +1,52 @@
+import { existsSync } from "node:fs";
+import { cp, mkdir, rm } from "node:fs/promises";
+import { join } from "node:path";
+import process from "node:process";
+import { extractArchive } from "./archive.ts";
+import { cleanDirectory, downloadVerified, tempArchive } from "./zig.ts";
+
+export function installationPath(version: string, platform: string): string {
+  return join(
+    process.env.RUNNER_TOOL_CACHE || join(process.cwd(), ".zig-tool-cache"),
+    "setup-zig",
+    version,
+    platform,
+  );
+}
+
+export async function installZig(
+  version: string,
+  platform: string,
+  urls: string[],
+  sha256: string,
+): Promise<string> {
+  const destination = installationPath(version, platform);
+  const executable = join(
+    destination,
+    "zig" + (process.platform === "win32" ? ".exe" : ""),
+  );
+  if (existsSync(executable)) return destination;
+  await cleanDirectory(destination);
+  await mkdir(destination, { recursive: true });
+  for (const url of urls) {
+    const archive = tempArchive(version, url);
+    try {
+      const signature = new URL(url);
+      signature.search = "";
+      signature.pathname += ".minisig";
+      signature.searchParams.set("source", "ryuapp-setup-zig");
+      await downloadVerified(url, sha256, archive, fetch, signature.toString());
+      const extracted = await extractArchive(archive, destination);
+      if (extracted !== destination) {
+        await cp(extracted, destination, { recursive: true, force: true });
+      }
+      return destination;
+    } catch (error) {
+      await cleanDirectory(destination);
+      if (url === urls.at(-1)) throw error;
+    } finally {
+      await rm(archive, { force: true });
+    }
+  }
+  throw new Error("Unable to download Zig");
+}

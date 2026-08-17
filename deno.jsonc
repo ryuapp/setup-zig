@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "nodeModulesDir": "none",
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["ES2024", "DOM"],
+    "types": ["npm:@types/node"]
+  },
+  "fmt": {
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "rules": {
+      "include": ["no-process-global"]
+    }
+  }
+}
