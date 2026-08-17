@@ -40,7 +40,7 @@ jobs:
           - ubuntu-26.04-arm
           - ubuntu-slim
           - xcode-27
-          - macos-26-large
+          - macos-26-intel
           - windows-2025
           - windows-11-vs2026-arm
     runs-on: ${{ matrix.os }}
