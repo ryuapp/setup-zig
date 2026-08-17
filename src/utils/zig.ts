@@ -3,6 +3,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import process from "node:process";
+import { info } from "./actions.ts";
 import { verifyMinisign } from "./minisign.ts";
 
 export type Artifact = { tarball: string; shasum: string; size?: number };
@@ -75,11 +76,16 @@ export async function downloadVerified(
   fetcher: typeof fetch = fetch,
   signatureUrl?: string,
 ): Promise<void> {
+  const started = performance.now();
+  info(`Downloading Zig archive: ${new URL(url).origin}`);
   const response = await fetcher(url);
   if (!response.ok) {
     throw new Error(`Unable to download Zig (${response.status}): ${url}`);
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
+  info(
+    `Downloaded Zig archive in ${(performance.now() - started).toFixed(1)}ms`,
+  );
   const actual = createHash("sha256").update(bytes).digest("hex");
   if (actual.toLowerCase() !== expectedSha256.toLowerCase()) {
     throw new Error(
@@ -87,11 +93,14 @@ export async function downloadVerified(
     );
   }
   if (signatureUrl) {
+    info("Downloading Zig minisign signature");
     const signature = await fetcher(signatureUrl);
     if (!signature.ok) {
       throw new Error(`Unable to download Zig signature (${signature.status})`);
     }
+    info("Verifying Zig minisign signature");
     verifyMinisign(bytes, await signature.text(), archiveName(url));
+    info("Zig minisign signature verified");
   }
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, bytes);

@@ -30,9 +30,13 @@ export async function installZig(
   info(`Installing Zig ${version} (${platform})`);
   await cleanDirectory(destination);
   await mkdir(destination, { recursive: true });
-  for (const url of urls) {
+  for (const [index, url] of urls.entries()) {
     const archive = tempArchive(version, url);
-    info(`Trying Zig download: ${new URL(url).origin}`);
+    info(
+      `Trying Zig download (${index + 1}/${urls.length}): ${
+        new URL(url).origin
+      }`,
+    );
     try {
       const signature = new URL(url);
       signature.search = "";
@@ -53,6 +57,7 @@ export async function installZig(
       );
       await cleanDirectory(destination);
       if (url === urls.at(-1)) throw error;
+      info(`Retrying Zig download (${index + 2}/${urls.length})`);
     } finally {
       await rm(archive, { force: true });
     }
