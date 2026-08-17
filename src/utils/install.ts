@@ -37,11 +37,6 @@ export async function installZig(
   await mkdir(destination, { recursive: true });
   for (const [index, url] of urls.entries()) {
     const archive = tempArchive(version, url);
-    info(
-      `Trying Zig download (${index + 1}/${urls.length}): ${
-        new URL(url).origin
-      }`,
-    );
     try {
       const signature = new URL(url);
       signature.search = "";
@@ -53,6 +48,9 @@ export async function installZig(
         archive,
         fetch,
         signature.toString(),
+        `Trying Zig download (${index + 1}/${urls.length}): ${
+          new URL(url).origin
+        }`,
       );
       startGroup("Extracting Zig archive");
       try {

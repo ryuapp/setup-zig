@@ -76,11 +76,13 @@ export async function downloadVerified(
   destination: string,
   fetcher: typeof fetch = fetch,
   signatureUrl?: string,
+  attempt?: string,
 ): Promise<void> {
   const started = performance.now();
   startGroup("Downloading Zig archive");
   let bytes = new Uint8Array();
   try {
+    if (attempt) info(attempt);
     info(`Downloading Zig archive: ${new URL(url).origin}`);
     const response = await fetcher(url);
     if (!response.ok) {
