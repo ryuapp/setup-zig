@@ -3,6 +3,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 import { extractArchive } from "./archive.ts";
+import { info } from "./actions.ts";
 import { cleanDirectory, downloadVerified, tempArchive } from "./zig.ts";
 
 export function installationPath(version: string, platform: string): string {
@@ -26,10 +27,12 @@ export async function installZig(
     "zig" + (process.platform === "win32" ? ".exe" : ""),
   );
   if (existsSync(executable)) return destination;
+  info(`Installing Zig ${version} (${platform})`);
   await cleanDirectory(destination);
   await mkdir(destination, { recursive: true });
   for (const url of urls) {
     const archive = tempArchive(version, url);
+    info(`Trying Zig download: ${new URL(url).origin}`);
     try {
       const signature = new URL(url);
       signature.search = "";
@@ -40,8 +43,14 @@ export async function installZig(
       if (extracted !== destination) {
         await cp(extracted, destination, { recursive: true, force: true });
       }
+      info(`Installed Zig ${version} at ${destination}`);
       return destination;
     } catch (error) {
+      info(
+        `Zig download failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       await cleanDirectory(destination);
       if (url === urls.at(-1)) throw error;
     } finally {

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import process from "node:process";
 import { cacheDirectories } from "./zig.ts";
+import { info } from "./actions.ts";
 
 const exec = promisify(execFile);
 
@@ -38,6 +39,7 @@ export function cacheKey(
 }
 
 export async function restoreCache(key: string): Promise<boolean> {
+  info(`Restoring cache: ${key}`);
   const paths = cacheDirectories();
   const version = versionFor(paths);
   const response = await fetch(
@@ -90,6 +92,7 @@ export async function restoreCache(key: string): Promise<boolean> {
 }
 
 export async function saveCache(key: string): Promise<void> {
+  info(`Saving cache: ${key}`);
   const paths = cacheDirectories();
   const version = versionFor(paths);
   const staging = await mkdtemp(join(tmpdir(), "setup-zig-cache-stage-"));
