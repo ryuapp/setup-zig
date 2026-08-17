@@ -14,6 +14,7 @@ export type DownloadIndex = Record<
 
 const INDEX_URL = "https://ziglang.org/download/index.json";
 const MIRRORS_URL = "https://ziglang.org/download/community-mirrors.txt";
+export const DOWNLOAD_SOURCE = "github-ryuapp-setup-zig";
 export function getPlatformKey(): string {
   const os = process.platform === "win32"
     ? "windows"
@@ -147,7 +148,7 @@ async function readDownload(response: Response): Promise<Uint8Array> {
 
 export async function downloadUrls(original: string): Promise<string[]> {
   const filename = basename(new URL(original).pathname);
-  const official = `${original}?source=ryuapp-setup-zig`;
+  const official = `${original}?source=${DOWNLOAD_SOURCE}`;
   try {
     const response = await fetch(MIRRORS_URL);
     if (!response.ok) {
@@ -164,7 +165,7 @@ export async function downloadUrls(original: string): Promise<string[]> {
       mirrors.splice(swap, 1, current);
     }
     return [
-      ...mirrors.map((base) => `${base}/${filename}?source=ryuapp-setup-zig`),
+      ...mirrors.map((base) => `${base}/${filename}?source=${DOWNLOAD_SOURCE}`),
       official,
     ];
   } catch {

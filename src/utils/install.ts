@@ -4,7 +4,12 @@ import { join } from "node:path";
 import process from "node:process";
 import { extractArchive } from "./archive.ts";
 import { info } from "./actions.ts";
-import { cleanDirectory, downloadVerified, tempArchive } from "./zig.ts";
+import {
+  cleanDirectory,
+  DOWNLOAD_SOURCE,
+  downloadVerified,
+  tempArchive,
+} from "./zig.ts";
 
 export function installationPath(version: string, platform: string): string {
   return join(
@@ -41,7 +46,7 @@ export async function installZig(
       const signature = new URL(url);
       signature.search = "";
       signature.pathname += ".minisig";
-      signature.searchParams.set("source", "ryuapp-setup-zig");
+      signature.searchParams.set("source", DOWNLOAD_SOURCE);
       await downloadVerified(url, sha256, archive, fetch, signature.toString());
       const extracted = await extractArchive(archive, destination);
       if (extracted !== destination) {
