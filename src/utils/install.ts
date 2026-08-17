@@ -3,7 +3,7 @@ import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 import { extractArchive } from "./archive.ts";
-import { info } from "./actions.ts";
+import { endGroup, info, startGroup } from "./actions.ts";
 import {
   cleanDirectory,
   DOWNLOAD_SOURCE,
@@ -25,7 +25,6 @@ export async function installZig(
   platform: string,
   urls: string[],
   sha256: string,
-  size?: number,
 ): Promise<string> {
   const destination = installationPath(version, platform);
   const executable = join(
@@ -54,15 +53,19 @@ export async function installZig(
         archive,
         fetch,
         signature.toString(),
-        size,
       );
-      const extracted = await extractArchive(archive, destination);
-      if (extracted !== destination) {
-        info("Flattening extracted Zig directory");
-        for (const entry of await readdir(extracted)) {
-          await rename(join(extracted, entry), join(destination, entry));
+      startGroup("Extracting Zig archive");
+      try {
+        const extracted = await extractArchive(archive, destination);
+        if (extracted !== destination) {
+          info("Flattening extracted Zig directory");
+          for (const entry of await readdir(extracted)) {
+            await rename(join(extracted, entry), join(destination, entry));
+          }
+          await rm(extracted, { recursive: true, force: true });
         }
-        await rm(extracted, { recursive: true, force: true });
+      } finally {
+        endGroup();
       }
       info(`Installed Zig ${version} at ${destination}`);
       return destination;

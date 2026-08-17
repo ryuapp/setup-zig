@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import process from "node:process";
-import { info } from "./actions.ts";
+import { endGroup, info, startGroup } from "./actions.ts";
 import { verifyMinisign } from "./minisign.ts";
 
 export type Artifact = { tarball: string; shasum: string; size?: number };
@@ -76,18 +76,23 @@ export async function downloadVerified(
   destination: string,
   fetcher: typeof fetch = fetch,
   signatureUrl?: string,
-  expectedSize?: number,
 ): Promise<void> {
   const started = performance.now();
-  info(`Downloading Zig archive: ${new URL(url).origin}`);
-  const response = await fetcher(url);
-  if (!response.ok) {
-    throw new Error(`Unable to download Zig (${response.status}): ${url}`);
+  startGroup("Downloading Zig archive");
+  let bytes = new Uint8Array();
+  try {
+    info(`Downloading Zig archive: ${new URL(url).origin}`);
+    const response = await fetcher(url);
+    if (!response.ok) {
+      throw new Error(`Unable to download Zig (${response.status}): ${url}`);
+    }
+    bytes = new Uint8Array(await response.arrayBuffer());
+    info(
+      `Downloaded Zig archive in ${(performance.now() - started).toFixed(1)}ms`,
+    );
+  } finally {
+    endGroup();
   }
-  const bytes = await readDownload(response, expectedSize);
-  info(
-    `Downloaded Zig archive in ${(performance.now() - started).toFixed(1)}ms`,
-  );
   const actual = createHash("sha256").update(bytes).digest("hex");
   if (actual.toLowerCase() !== expectedSha256.toLowerCase()) {
     throw new Error(
@@ -95,49 +100,24 @@ export async function downloadVerified(
     );
   }
   if (signatureUrl) {
-    info("Downloading Zig minisign signature");
-    const signature = await fetcher(signatureUrl);
-    if (!signature.ok) {
-      throw new Error(`Unable to download Zig signature (${signature.status})`);
+    startGroup("Verifying Zig minisign signature");
+    try {
+      info("Downloading Zig minisign signature");
+      const signature = await fetcher(signatureUrl);
+      if (!signature.ok) {
+        throw new Error(
+          `Unable to download Zig signature (${signature.status})`,
+        );
+      }
+      info("Verifying Zig minisign signature");
+      verifyMinisign(bytes, await signature.text(), archiveName(url));
+      info("Zig minisign signature verified");
+    } finally {
+      endGroup();
     }
-    info("Verifying Zig minisign signature");
-    verifyMinisign(bytes, await signature.text(), archiveName(url));
-    info("Zig minisign signature verified");
   }
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, bytes);
-}
-
-async function readDownload(
-  response: Response,
-  expectedSize?: number,
-): Promise<Uint8Array> {
-  const reader = response.body?.getReader();
-  if (!reader) return new Uint8Array(await response.arrayBuffer());
-  const total = expectedSize || Number(response.headers.get("content-length"));
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  let lastProgressAt = performance.now();
-  const hasTotal = Number.isFinite(total) && total > 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    chunks.push(value);
-    received += value.byteLength;
-    if (hasTotal && performance.now() - lastProgressAt >= 5000) {
-      const progress = Math.min(100, Math.floor((received * 100) / total));
-      info(`Download progress: ${progress}%`);
-      lastProgressAt = performance.now();
-    }
-  }
-  const bytes = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return bytes;
 }
 
 export async function downloadUrls(original: string): Promise<string[]> {

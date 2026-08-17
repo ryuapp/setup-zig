@@ -12,8 +12,6 @@ export async function extractArchive(
   destination: string,
 ): Promise<string> {
   const started = performance.now();
-  const format = archive.endsWith(".zip") ? "ZIP" : "tar.xz";
-  info(`Extracting ${format} archive`);
   await mkdir(destination, { recursive: true });
   if (archive.endsWith(".zip")) {
     if (process.platform === "win32") {

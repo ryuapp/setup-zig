@@ -29,6 +29,15 @@ export function setState(name: string, value: string): void {
 export function info(message: string): void {
   console.log(message);
 }
+
+export function startGroup(title: string): void {
+  console.log(`::group::${title}`);
+}
+
+export function endGroup(): void {
+  console.log("::endgroup::");
+}
+
 export function state(name: string): string {
   return process.env[`STATE_${name.toUpperCase().replaceAll("-", "_")}`] || "";
 }
