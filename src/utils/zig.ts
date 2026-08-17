@@ -82,7 +82,7 @@ export async function downloadVerified(
   if (!response.ok) {
     throw new Error(`Unable to download Zig (${response.status}): ${url}`);
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const bytes = await readDownload(response);
   info(
     `Downloaded Zig archive in ${(performance.now() - started).toFixed(1)}ms`,
   );
@@ -104,6 +104,38 @@ export async function downloadVerified(
   }
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, bytes);
+}
+
+async function readDownload(response: Response): Promise<Uint8Array> {
+  const reader = response.body?.getReader();
+  if (!reader) return new Uint8Array(await response.arrayBuffer());
+  const total = Number(response.headers.get("content-length"));
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  let nextProgress = 5;
+  if (Number.isFinite(total) && total > 0) info("Download progress: 0%");
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    chunks.push(value);
+    received += value.byteLength;
+    if (Number.isFinite(total) && total > 0) {
+      const progress = Math.floor((received * 100) / total);
+      if (progress >= nextProgress) {
+        info(`Download progress: ${progress}%`);
+        nextProgress = progress + 5;
+      }
+    }
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  if (Number.isFinite(total) && total > 0) info("Download progress: 100%");
+  return bytes;
 }
 
 export async function downloadUrls(original: string): Promise<string[]> {
