@@ -19,7 +19,7 @@ export async function extractArchive(
     if (process.platform === "win32") {
       try {
         info("Extracting ZIP with 7-Zip");
-        await exec("7z", ["x", "-y", `-o${destination}`, archive]);
+        await exec("7z", ["x", "-y", "-mmt=on", `-o${destination}`, archive]);
       } catch (error) {
         const code = typeof error === "object" && error && "code" in error
           ? error.code
